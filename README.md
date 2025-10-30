@@ -40,6 +40,16 @@ SLONline\ExchangeRates\ExchangeRates::singleton()->getExchangeRate('EUR','USD');
 ```php
 SLONline\ExchangeRates\ExchangeRates::singleton()->getExchangeRate('EUR','USD', '2025-10-30');
 ```
+Calling it via singleton is recommended to avoid multiple loading of rates from database.
+
+### Conversion is available on DBMoney field via extension
+First method for getting converted value from base currency to target currency.
+```php
+$money = DBMoney::create('money')->setAmount( 100)->setCurrency('EUR');
+Debug::dump($money->getAmountInCurrency('USD')); // will output amount converted to USD
+
+Debug::dump($money->getInAllSupportedCurrencies()); // will output ArrayList with amounts in all supported currencies
+```
 
 ## Processors
 Processor is main class for downloading, parsing and writing exchange rates from some source.

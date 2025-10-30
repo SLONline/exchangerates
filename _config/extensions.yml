@@ -1,0 +1,6 @@
+---
+Name: exchange-rates-extensions
+---
+SilverStripe\ORM\FieldType\DBMoney:
+  extensions:
+    - SLONline\ExchangeRates\Extensions\DBMoney
