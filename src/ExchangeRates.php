@@ -5,6 +5,7 @@ namespace SLONline\ExchangeRates;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Injector\Injectable;
+use SilverStripe\Model\List\ArrayList;
 use SilverStripe\ORM\DataList;
 use SLONline\ExchangeRates\Model\ExchangeRate;
 
@@ -22,6 +23,13 @@ class ExchangeRates
     private static ?string $registered_processor = null;
 
     private static array $supported_currencies = [];
+
+    private ArrayList $cachedRates;
+
+    public function __construct()
+    {
+        $this->cachedRates = ArrayList::create();
+    }
 
     public function process(): bool
     {
@@ -42,10 +50,10 @@ class ExchangeRates
      *
      * @param string $fromCurrency
      * @param string $toCurrency
-     * @param string $date
-     * @return float
+     * @param string|null $date
+     * @return float|null
      */
-    public function getExchangeRate(string $fromCurrency, string $toCurrency, string $date = ''): float
+    public function getExchangeRate(string $fromCurrency, string $toCurrency, ?string $date = null): ?float
     {
         if ($fromCurrency == $toCurrency) {
             return 1;
@@ -60,12 +68,16 @@ class ExchangeRates
             $filter['Date:LessThanOrEqual'] = date('Y-m-d', strtotime($date));
         }
 
-        $obj = DataList::create(ExchangeRate::class)
-            ->filter($filter)->first();
-        if ($obj) {
-            return $obj->Rate;
+        $exchangeRate = $this->cachedRates->filter($filter)->first();
+        if ($exchangeRate) {
+            return $exchangeRate->Rate;
         }
 
-        return 0.0;
+        $exchangeRate = DataList::create(ExchangeRate::class)->filter($filter)->first();
+        if ($exchangeRate) {
+            $this->cachedRates->push($exchangeRate);
+        }
+
+        return $exchangeRate?->Rate;
     }
 }

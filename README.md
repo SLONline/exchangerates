@@ -34,11 +34,11 @@ SLONline\ExchangeRates\ExchangeRates::singleton()->process();
 ## Converting amount from the basic currency to the second
 1. Getting the latest value
 ```php
-SLONline\ExchangeRates\ExchangeRates::create()->getExchangeRate('EUR','USD');
+SLONline\ExchangeRates\ExchangeRates::singleton()->getExchangeRate('EUR','USD');
 ```
 2. Getting the value for specific date if exists
 ```php
-SLONline\ExchangeRates\ExchangeRates::create()->getExchangeRate('EUR','USD', '2025-10-30');
+SLONline\ExchangeRates\ExchangeRates::singleton()->getExchangeRate('EUR','USD', '2025-10-30');
 ```
 
 ## Processors
