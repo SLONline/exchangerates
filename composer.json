@@ -1,0 +1,27 @@
+{
+  "name": "slonline/exchangerates",
+  "description": "Exchange rates - Module for SilverStripe 6",
+  "keywords": [
+    "silverstripe",
+    "CMS",
+    "Exchange Rates"
+  ],
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Lubos Odraska",
+      "email": "odraska@slonline.sk",
+      "homepage": "https://www.slonline.sk"
+    }
+  ],
+  "require": {
+    "ext-simplexml": "*",
+    "silverstripe/framework": "~6"
+  },
+  "autoload": {
+    "psr-4": {
+      "SLONline\\ExchangeRates\\": "src/"
+    }
+  },
+  "minimum-stability": "dev"
+}
