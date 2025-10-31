@@ -76,6 +76,19 @@ class ExchangeRates
         $exchangeRate = DataList::create(ExchangeRate::class)->filter($filter)->first();
         if ($exchangeRate) {
             $this->cachedRates->push($exchangeRate);
+        } else {
+            $basicCurrency = null;
+            $registeredProcessor = Config::inst()->get(self::class, 'registered_processor');
+            if ($registeredProcessor && class_exists($registeredProcessor)) {
+                $basicCurrency = Config::inst()->get($registeredProcessor, 'basic_currency');
+            }
+            if ($basicCurrency) {
+                $rateFromBasic = $this->getExchangeRate($fromCurrency, $basicCurrency, $date);
+                $rateToBasic = $this->getExchangeRate($toCurrency, $basicCurrency, $date);
+                if ($rateFromBasic !== null && $rateToBasic !== null) {
+                    return $rateToBasic / $rateFromBasic;
+                }
+            }
         }
 
         return $exchangeRate?->Rate;

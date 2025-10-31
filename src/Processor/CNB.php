@@ -23,10 +23,13 @@ final class CNB implements ProcessorInterface
 
     private static $url = 'https://www.cnb.cz/en/financial-markets/foreign-exchange-market/central-bank-exchange-rate-fixing/central-bank-exchange-rate-fixing/daily.txt';
 
+    private static string $basic_currency = 'CZK';
+
     public function process()
     {
         $url = Config::inst()->get(self::class, 'url');
         $supportedCurrencies = Config::inst()->get(ExchangeRates::class, 'supported_currencies') ?? [];
+        $basicCurrency = Config::inst()->get(self::class, 'basic_currency');
 
         $client = new Client();
         $response = $client->request('GET', $url);
@@ -46,36 +49,34 @@ final class CNB implements ProcessorInterface
                 $rate = explode('|', $body[$i]);
                 if (count($rate) == 5 &&
                     in_array($rate[3], $supportedCurrencies)) {
-                    $fromCurrency = 'CZK';
                     $toCurrency = (string)$rate[3];
                     $obj = DataList::create(ExchangeRate::class)
                         ->filter([
                             'Date' => $date,
-                            'FromCode' => $fromCurrency,
+                            'FromCode' => $basicCurrency,
                             'ToCode' => $toCurrency,
                         ])->first();
                     if (!$obj) {
                         $obj = ExchangeRate::create();
                         $obj->Date = $date;
-                        $obj->FromCode = $fromCurrency;
+                        $obj->FromCode = $basicCurrency;
                         $obj->ToCode = $toCurrency;
                         $obj->Rate = 1 / (float)($rate[4] / $rate[2]);
                         $obj->write();
                     }
 
                     $fromCurrency = (string)$rate[3];
-                    $toCurrency = 'CZK';
                     $obj = DataList::create(ExchangeRate::class)
                         ->filter([
                             'Date' => $date,
                             'FromCode' => $fromCurrency,
-                            'ToCode' => $toCurrency,
+                            'ToCode' => $basicCurrency,
                         ])->first();
                     if (!$obj) {
                         $obj = ExchangeRate::create();
                         $obj->Date = $date;
                         $obj->FromCode = $fromCurrency;
-                        $obj->ToCode = $toCurrency;
+                        $obj->ToCode = $basicCurrency;
                         $obj->Rate = (float)$rate[4] / $rate[2];
                         $obj->write();
                     }
