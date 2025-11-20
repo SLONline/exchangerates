@@ -59,4 +59,35 @@ class DBMoney extends Extension
 
         return $result;
     }
+
+    public function getInCurrency(string $currencyCode, ?string $date = null): ?\SilverStripe\ORM\FieldType\DBMoney
+    {
+        $baseCurrency = $this->owner->getCurrency();
+        $amount = $this->owner->getAmount();
+
+        if (!$baseCurrency || !$currencyCode || $amount === null) {
+            return null;
+        }
+
+        $rate = ExchangeRates::singleton()->getExchangeRate($baseCurrency, $currencyCode, $date);
+        if ($rate === null) {
+            return null;
+        }
+
+        return \SilverStripe\ORM\FieldType\DBMoney::create()
+            ->setCurrency($currencyCode)
+            ->setAmount($amount * $rate);
+    }
+
+    public function getCurrencyRate(string $currencyCode, ?string $date = null): ?float
+    {
+        $baseCurrency = $this->owner->getCurrency();
+        $amount = $this->owner->getAmount();
+
+        if (!$baseCurrency || !$currencyCode || $amount === null) {
+            return null;
+        }
+
+        return ExchangeRates::singleton()->getExchangeRate($baseCurrency, $currencyCode, $date);
+    }
 }
