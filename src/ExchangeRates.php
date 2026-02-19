@@ -73,6 +73,10 @@ class ExchangeRates
             return $exchangeRate->Rate;
         }
 
+        if (DataList::create(ExchangeRate::class)->count() == 0) {
+            return 1;
+        }
+
         $exchangeRate = DataList::create(ExchangeRate::class)->filter($filter)->first();
         if ($exchangeRate) {
             $this->cachedRates->push($exchangeRate);
