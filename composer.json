@@ -20,7 +20,8 @@
   },
   "autoload": {
     "psr-4": {
-      "SLONline\\ExchangeRates\\": "src/"
+      "SLONline\\ExchangeRates\\": "src/",
+      "SLONline\\ExchangeRates\\Tests\\": "tests/php/"
     }
   },
   "minimum-stability": "dev"

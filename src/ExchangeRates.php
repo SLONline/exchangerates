@@ -90,7 +90,7 @@ class ExchangeRates
                 $rateFromBasic = $this->getExchangeRate($fromCurrency, $basicCurrency, $date);
                 $rateToBasic = $this->getExchangeRate($toCurrency, $basicCurrency, $date);
                 if ($rateFromBasic !== null && $rateToBasic !== null) {
-                    return $rateToBasic / $rateFromBasic;
+                    return $rateFromBasic / $rateToBasic;
                 }
             }
         }

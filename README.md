@@ -69,3 +69,11 @@ SLONline\ExchangeRates\ExchangeRates:
 ### Adding new processor
 If you want to add new source of rates, you can create new processor. 
 Each processor should implement ProcessorInterface.
+
+## Tests
+
+The module cannot boot Silverstripe on its own, so a project runs its tests:
+
+```bash
+SS_PHPUNIT_FLUSH=1 vendor/bin/phpunit vendor/slonline/exchangerates/tests/php
+```
