@@ -3,7 +3,7 @@
 Releases of branch `main` that projects (briefcase, suitcase, dstype, antikvariatsteiner) should know about. Projects
 require `slonline/exchangerates: ^6.0` and get the tagged releases from packages.slonline.sk.
 
-## 6.1.0 (unreleased)
+## 6.1.0 (2026-11-27)
 
 ### Added
 
