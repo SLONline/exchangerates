@@ -1,3 +1,4 @@
 SilverStripe\Cli\Sake:
   commands:
     - 'SLONline\ExchangeRates\Cli\Command\ExchangeRates'
+    - 'SLONline\ExchangeRates\Cli\Command\ExchangeRatesHistory'

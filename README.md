@@ -31,6 +31,18 @@ or
 SLONline\ExchangeRates\ExchangeRates::singleton()->process();
 ```
 
+### Past rates (CNB)
+
+The processor of the CNB downloads the rates of a day. The rates of the past are stored by a command, year by year
+from a date (the default 2014-01-01) until today; only the missing rates of the supported currencies are added:
+
+```shell
+vendor/bin/sake process:exchangerates-history --from=2014-01-01
+```
+
+A rate of a day is the latest stored on or before it. A pair with the basic currency without any such rate is not
+known (`getExchangeRate()` returns null).
+
 ## Converting amount from the basic currency to the second
 1. Getting the latest value
 ```php
