@@ -51,4 +51,42 @@ class ExchangeRatesTest extends SapphireTest
         $this->assertEqualsWithDelta(24.455 / 22.358, $rates->getExchangeRate('EUR', 'USD'), 0.0001);
         $this->assertEqualsWithDelta(22.358 / 24.455, $rates->getExchangeRate('USD', 'EUR'), 0.0001);
     }
+
+    public function testAMissingRateOfTheBasicCurrencyIsNotKnown(): void
+    {
+        $rates = ExchangeRates::create();
+
+        $this->assertNull($rates->getExchangeRate('EUR', 'CZK', '2014-07-08'));
+        $this->assertNull($rates->getExchangeRate('CZK', 'EUR', '2014-07-08'));
+        $this->assertNull($rates->getExchangeRate('EUR', 'USD', '2014-07-08'));
+        $this->assertNull($rates->getExchangeRate('GBP', 'CZK'));
+    }
+
+    public function testTheRateOfADayIsTheLatestOnOrBeforeIt(): void
+    {
+        ExchangeRate::create()->update([
+            'Date' => '2014-07-08',
+            'FromCode' => 'EUR',
+            'ToCode' => 'CZK',
+            'Rate' => 27.4,
+        ])->write();
+        $rates = ExchangeRates::create();
+
+        $this->assertEqualsWithDelta(27.4, $rates->getExchangeRate('EUR', 'CZK', '2014-07-08'), 0.0001);
+        $this->assertEqualsWithDelta(27.4, $rates->getExchangeRate('EUR', 'CZK', '2020-01-01'), 0.0001);
+        $this->assertEqualsWithDelta(24.455, $rates->getExchangeRate('EUR', 'CZK', '2026-11-24'), 0.0001);
+        $this->assertEqualsWithDelta(24.455, $rates->getExchangeRate('EUR', 'CZK'), 0.0001);
+    }
+
+    public function testTheYearlyFileOfTheCnbIsParsedPerUnit(): void
+    {
+        $body = "Date|1 EUR|100 HUF|1 USD\n02.01.2014|27.480|9.202|20.120\n03.01.2014|27.520|9.223|20.186\n";
+
+        $days = CNB::create()->parseYear($body);
+
+        $this->assertSame(['2014-01-02', '2014-01-03'], array_keys($days));
+        $this->assertEqualsWithDelta(27.48, $days['2014-01-02']['EUR'], 0.00001);
+        $this->assertEqualsWithDelta(0.09202, $days['2014-01-02']['HUF'], 0.00001);
+        $this->assertEqualsWithDelta(20.186, $days['2014-01-03']['USD'], 0.00001);
+    }
 }

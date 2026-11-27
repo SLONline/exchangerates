@@ -5,7 +5,6 @@ namespace SLONline\ExchangeRates;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Injector\Injectable;
-use SilverStripe\Model\List\ArrayList;
 use SilverStripe\ORM\DataList;
 use SLONline\ExchangeRates\Model\ExchangeRate;
 
@@ -24,12 +23,12 @@ class ExchangeRates
 
     private static array $supported_currencies = [];
 
-    private ArrayList $cachedRates;
+    /**
+     * @var array<string, float|null>
+     */
+    private array $cachedRates = [];
 
-    public function __construct()
-    {
-        $this->cachedRates = ArrayList::create();
-    }
+    private ?bool $hasRates = null;
 
     public function process(): bool
     {
@@ -46,55 +45,69 @@ class ExchangeRates
 
 
     /**
-     * Gets exchange rate for currency abbreviation
-     *
-     * @param string $fromCurrency
-     * @param string $toCurrency
-     * @param string|null $date
-     * @return float|null
+     * Rate that converts an amount in the first currency to the second one at the date (the latest rate on or before
+     * it), else now; a pair without its own rate is crossed through the basic currency of the processor. Null when
+     * the rate is not known; 1 while no rates are stored at all.
      */
     public function getExchangeRate(string $fromCurrency, string $toCurrency, ?string $date = null): ?float
     {
         if ($fromCurrency == $toCurrency) {
             return 1;
         }
+        if (!$this->hasRates()) {
+            return 1;
+        }
+        $day = !empty($date) ? date('Y-m-d', strtotime($date)) : '';
+        $key = $fromCurrency . '|' . $toCurrency . '|' . $day;
+        if (!array_key_exists($key, $this->cachedRates)) {
+            $this->cachedRates[$key] = $this->storedRate($fromCurrency, $toCurrency, $day)
+                ?? $this->crossedRate($fromCurrency, $toCurrency, $date);
+        }
 
+        return $this->cachedRates[$key];
+    }
+
+    private function storedRate(string $fromCurrency, string $toCurrency, string $day): ?float
+    {
         $filter = [
             'FromCode' => $fromCurrency,
             'ToCode' => $toCurrency,
         ];
+        if ($day !== '') {
+            $filter['Date:LessThanOrEqual'] = $day;
+        }
+        $exchangeRate = DataList::create(ExchangeRate::class)->filter($filter)->sort('Date', 'DESC')->first();
 
-        if (!empty($date)) {
-            $filter['Date:LessThanOrEqual'] = date('Y-m-d', strtotime($date));
+        return $exchangeRate ? (float)$exchangeRate->Rate : null;
+    }
+
+    /**
+     * The pair through the basic currency of the processor; null when one of the currencies is the basic one (its
+     * direct rate is missing, crossing would ask for the same pair again) or a leg is not known.
+     */
+    private function crossedRate(string $fromCurrency, string $toCurrency, ?string $date): ?float
+    {
+        $basicCurrency = null;
+        $registeredProcessor = Config::inst()->get(self::class, 'registered_processor');
+        if ($registeredProcessor && class_exists($registeredProcessor)) {
+            $basicCurrency = Config::inst()->get($registeredProcessor, 'basic_currency');
+        }
+        if (!$basicCurrency || $fromCurrency === $basicCurrency || $toCurrency === $basicCurrency) {
+            return null;
+        }
+        $rateFromBasic = $this->getExchangeRate($fromCurrency, $basicCurrency, $date);
+        $rateToBasic = $this->getExchangeRate($toCurrency, $basicCurrency, $date);
+        if ($rateFromBasic === null || $rateToBasic === null || $rateToBasic == 0.0) {
+            return null;
         }
 
-        $exchangeRate = $this->cachedRates->filter($filter)->first();
-        if ($exchangeRate) {
-            return $exchangeRate->Rate;
-        }
+        return $rateFromBasic / $rateToBasic;
+    }
 
-        if (DataList::create(ExchangeRate::class)->count() == 0) {
-            return 1;
-        }
+    private function hasRates(): bool
+    {
+        $this->hasRates ??= DataList::create(ExchangeRate::class)->exists();
 
-        $exchangeRate = DataList::create(ExchangeRate::class)->filter($filter)->first();
-        if ($exchangeRate) {
-            $this->cachedRates->push($exchangeRate);
-        } else {
-            $basicCurrency = null;
-            $registeredProcessor = Config::inst()->get(self::class, 'registered_processor');
-            if ($registeredProcessor && class_exists($registeredProcessor)) {
-                $basicCurrency = Config::inst()->get($registeredProcessor, 'basic_currency');
-            }
-            if ($basicCurrency) {
-                $rateFromBasic = $this->getExchangeRate($fromCurrency, $basicCurrency, $date);
-                $rateToBasic = $this->getExchangeRate($toCurrency, $basicCurrency, $date);
-                if ($rateFromBasic !== null && $rateToBasic !== null) {
-                    return $rateFromBasic / $rateToBasic;
-                }
-            }
-        }
-
-        return $exchangeRate?->Rate;
+        return $this->hasRates;
     }
 }
